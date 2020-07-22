@@ -46,6 +46,10 @@ class Venue(db.Model):
     website = db.Column(db.String(120))
     # Genres
     genres = db.Column(db.String(120))
+    seeking_talent = db.Column(db.Boolean, default=False)
+    seeking_description = db.Column(db.String(500), default='')
+    # One-to-Many Relationship with Show table
+    shows = db.relationship('Show', backref='venue', lazy=True)
 
 class Artist(db.Model):
     __tablename__ = 'Artist'
@@ -62,8 +66,19 @@ class Artist(db.Model):
     # TODO: implement any missing fields, as a database migration using Flask-Migrate
     # Website Link
     website = db.Column(db.String(120))
+    seeking_venue = db.Column(db.Boolean, default=False)
+    seeking_description = db.Column(db.String(500), default='')
+    # One-to-Many Relationship with Show table
+    shows = db.relationship('Show', backref='artist', lazy=True)
 
 # TODO Implement Show and Artist models, and complete all model relationships and properties, as a database migration.
+class Show(db.Model):
+    __tablename__ = 'Show'
+
+    id = db.Column(db.Integer, primary_key=True)
+    start_time = db.Column(db.DateTime)
+    artist_id = db.Column(db.Integer, db.ForeignKey('Artist.id'), nullable=False)
+    venue_id = db.Column(db.Integer, db.ForeignKey('Venue.id'), nullable=False)
 
 #----------------------------------------------------------------------------#
 # Filters.
@@ -544,12 +559,31 @@ def create_shows():
 def create_show_submission():
   # called to create new shows in the db, upon submitting new show listing form
   # TODO: insert form data as a new Show record in the db, instead
-
-  # on successful db insert, flash success
-  flash('Show was successfully listed!')
-  # TODO: on unsuccessful db insert, flash an error instead.
-  # e.g., flash('An error occurred. Show could not be listed.')
-  # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
+  error = False
+  new_show = {}
+  try:
+    artist_id = request.form.get('artist_id')
+    venue_id = request.form.get('venue_id')
+    start_time = request.form.get('start_time')
+    # if(Artist.query.get(artist_id) and Venue.query.get(venue.id)):
+    show = Show(artist_id=artist_id, venue_id=venue_id, start_time=start_time)
+    db.session.add(show)
+    db.session.commit()
+    new_show = show
+    # else:
+    #   flash('Artist or Venue ID Not Found. Show could not be listed!')
+  except:
+    error = True
+    db.session.rollback()
+  finally:
+    db.session.close()
+    
+  if error:
+    # TODO: on unsuccessful db insert, flash an error instead.
+    flash('An error occurred. Show could not be listed!')
+  else:
+    # on successful db insert, flash success
+    flash('Show was successfully listed!')
   return render_template('pages/home.html')
 
 @app.errorhandler(404)
