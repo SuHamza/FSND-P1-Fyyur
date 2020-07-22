@@ -6,6 +6,7 @@
         <i class="fa fa-home pull-right"></i>
       </a>
     </h3>
+    {{ form.csrf_token }}
     <div class="form-group">
       <label for="name">Name</label>
       {{ form.name(class_ = 'form-control', autofocus = true) }}
